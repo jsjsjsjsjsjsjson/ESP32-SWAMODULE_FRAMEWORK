@@ -77,6 +77,33 @@ public:
         printf("Successfully connected output #%d of module #%d to input #%d of module #%d\n", outputPort, sourceSlot, inputPort, targetSlot);
         return 0;
     }
+
+    void printModuleInfo() {
+        for (uint8_t m = 0; m < getSlotSize(); m++) {
+            module_info_t info = modules[m]->module_info;
+            printf("Module #%d Information:\n", m);
+            printf("Name: %s\n", info.name);
+            printf("Author: %s\n", info.author);
+            printf("Profile: %s\n", info.profile);
+            printf(" Input Port:\n");
+            for (uint8_t p = 0; p < getInputPortCount(m); p++) {
+                port_t& info = getInputPort(m, p);
+                printf("  Input #%d\n", p);
+                printf("   Name: %s\n", info.name);
+                printf("   Profile: %s\n", info.profile);
+                printf("   data: %d\n", *info.data);
+            }
+            printf(" Output Port:\n");
+            for (uint8_t p = 0; p < getOutputPortCount(m); p++) {
+                port_t& info = getOutputPort(m, p);
+                printf("  Output #%d\n", p);
+                printf("   Name: %s\n", info.name);
+                printf("   Profile: %s\n", info.profile);
+                printf("   data: %d\n", *info.data);
+            }
+            printf("\n");
+        }
+    }
 };
 
 #endif

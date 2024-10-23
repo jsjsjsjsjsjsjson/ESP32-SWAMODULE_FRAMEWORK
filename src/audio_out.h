@@ -58,7 +58,7 @@ public:
         bufferPoint++;
         if (bufferPoint > BUFF_SIZE) {
             i2s_channel_write(tx_handle, buffer, sizeof(buffer), &writed, portMAX_DELAY);
-            printf("I2S: writed->%dBytes\n", writed);
+            // printf("I2S: writed->%dBytes\n", writed);
             bufferPoint = 0;
         }
     }

@@ -13,7 +13,9 @@ typedef enum {
     PORT_AIN,
     PORT_AOUT,
     PORT_DIN,
-    PORT_DOUT
+    PORT_DOUT,
+    PORT_AIN_FLOAT,
+    PORT_AOUT_FLOAT
 } port_type;
 
 typedef struct {

@@ -4,7 +4,14 @@
 #include "SerialTerminal.h"
 #include "Adafruit_SSD1306.h"
 #include "connect_manager.hpp"
+#include "note_input.h"
 #include "audio_out.h"
+#include "key_event.h"
+
+#include "Adafruit_MPR121.h"
+
+Adafruit_MPR121 touchPad0;
+Adafruit_MPR121 touchPad1;
 
 ConnectionManager manager;
 
@@ -75,22 +82,26 @@ void restartCmd(int argc, const char* argv[]) {
     ESP.restart();
 }
 
-/*
-void loadModCmd(int argc, const char* argv[]) {
-    if (argc < 2) {printf("%s <Module name>\n", argv[0]);return;}
-    modules[0] = manager.createModule(argv[1]);
+void atkNoteCmd(int argc, const char* argv[]) {
+    if (argc < 2) {printf("%s <note>\n", argv[0]);return;}
+    key_event_t noteEvent;
+    noteEvent.num = strtol(argv[1], NULL, 0);
+    noteEvent.status = KEY_ATTACK;
+    if (xQueueSend(xNoteQueue, &noteEvent, portMAX_DELAY) == pdPASS) {
+        printf("NOTE %d ATTACK\n", noteEvent.num);
+    }
 }
 
-void unloadModCmd(int argc, const char* argv[]) {
-    if (argc < 2) {printf("%s <Module name>\n", argv[0]);return;}
-    manager.releaseModule(argv[1]);
+void rlsNoteCmd(int argc, const char* argv[]) {
+    key_event_t noteEvent = {255, KEY_RELEASE};
+    if (xQueueSend(xNoteQueue, &noteEvent, portMAX_DELAY) == pdPASS) {
+        printf("NOTE RELEASE\n", noteEvent.num);
+    }
 }
 
-void printModInfoCmd(int argc, const char* argv[]) {
-    if (argc < 2) {printf("%s <Module name>\n", argv[0]);return;}
-    manager.printModuleInfo(argv[1]);
+void printSlotInfoCmd(int argc, const char* argv[]) {
+    manager.printModuleInfo();
 }
-*/
 
 void printAllModInfoCmd(int argc, const char* argv[]) {
     manager.module_manager.printAllRegisteredModules();
@@ -116,12 +127,9 @@ void serialDebug(void *arg) {
     vTaskDelay(16);
     terminal.begin(115200, "ESP32MODULE");
     terminal.addCommand("reboot", restartCmd);
-    /*
-    terminal.addCommand("loadMod", loadModCmd);
-    terminal.addCommand("unloadMod", unloadModCmd);
-    terminal.addCommand("testProcess", testProcessCmd);
-    terminal.addCommand("printModInfo", printModInfoCmd);
-    */
+    terminal.addCommand("atkNote", atkNoteCmd);
+    terminal.addCommand("rlsNote", rlsNoteCmd);
+    terminal.addCommand("printSlotInfo", printSlotInfoCmd);
     terminal.addCommand("printAllModInfo", printAllModInfoCmd);
     terminal.addCommand("get_free_heap", get_free_heap_cmd);
     for (;;) {
@@ -130,51 +138,31 @@ void serialDebug(void *arg) {
     }
 }
 
+void soundEng(void *arg) {
+    for (;;) {
+        manager.process_all();
+    }
+}
+
 void setup() {
+    xNoteQueue = xQueueCreate(8, sizeof(key_event_t));
     manager.module_manager.registerModule<TestModule>();
     manager.module_manager.registerModule<VolCtrl>();
     manager.module_manager.registerModule<i2s_audio_out>();
+    manager.module_manager.registerModule<noteEventModule>();
 
     manager.createModule("noise generator");
     manager.createModule("volume control");
     manager.createModule("ESP32 I2S Audio Out");
+    manager.createModule("Note Event");
 
     manager.connect(0, 0, 1, 0);
     manager.connect(1, 0, 2, 0);
 
-    for (uint8_t m = 0; m < manager.getSlotSize(); m++) {
-        module_info_t info = manager.modules[m]->module_info;
-        printf("Module #%d Information:\n", m);
-        printf("Name: %s\n", info.name);
-        printf("Author: %s\n", info.author);
-        printf("Profile: %s\n", info.profile);
-        printf(" Input Port:\n");
-        for (uint8_t p = 0; p < manager.getInputPortCount(m); p++) {
-            port_t& info = manager.getInputPort(m, p);
-            printf("  Input #%d\n", p);
-            printf("   Name: %s\n", info.name);
-            printf("   Profile: %s\n", info.profile);
-            printf("   data: %d\n", *info.data);
-        }
-        printf(" Output Port:\n");
-        for (uint8_t p = 0; p < manager.getOutputPortCount(m); p++) {
-            port_t& info = manager.getOutputPort(m, p);
-            printf("  Output #%d\n", p);
-            printf("   Name: %s\n", info.name);
-            printf("   Profile: %s\n", info.profile);
-            printf("   data: %d\n", *info.data);
-        }
-        printf("\n");
-    }
+    manager.printModuleInfo();
 
-    vTaskDelay(128);
-
-    while (1) {
-        manager.process_all();
-        // vTaskDelay(1);
-    }
-
-    xTaskCreate(serialDebug, "terminal", 4096, NULL, 2, NULL);
+    xTaskCreatePinnedToCore(serialDebug, "terminal", 4096, NULL, 2, NULL, 1);
+    xTaskCreate(soundEng, "Sound Eng", 4096, NULL, 2, NULL);
 }
 
 void loop() {
