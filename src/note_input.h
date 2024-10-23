@@ -275,6 +275,7 @@ public:
     int16_t note = 0;
     int16_t freq = 0;   
     int16_t status = false;
+    uint16_t timer = 0;
     key_event_t noteEvent;
 
     void start() {
@@ -286,7 +287,19 @@ public:
         printf("Note Event Stop\n");
     }
     void process() {
-
+        if (!(timer & 15)) {
+            if (readNoteEvent == pdTRUE) {
+                if (noteEvent.status == KEY_ATTACK) {
+                    status = true;
+                } else if (noteEvent.status == KEY_RELEASE) {
+                    status = false;
+                }
+                note = noteEvent.num;
+                freq = midi2freq_int[note];
+            }
+            
+        }
+        timer++;
     }
     void customSettingPage() {
 

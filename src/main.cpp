@@ -7,6 +7,7 @@
 #include "note_input.h"
 #include "audio_out.h"
 #include "key_event.h"
+#include "simple_osc.h"
 
 #include "Adafruit_MPR121.h"
 
@@ -146,18 +147,19 @@ void soundEng(void *arg) {
 
 void setup() {
     xNoteQueue = xQueueCreate(8, sizeof(key_event_t));
-    manager.module_manager.registerModule<TestModule>();
+    manager.module_manager.registerModule<SimpleOsc>();
     manager.module_manager.registerModule<VolCtrl>();
     manager.module_manager.registerModule<i2s_audio_out>();
     manager.module_manager.registerModule<noteEventModule>();
 
-    manager.createModule("noise generator");
+    manager.createModule("simple osc");
     manager.createModule("volume control");
     manager.createModule("ESP32 I2S Audio Out");
     manager.createModule("Note Event");
 
-    manager.connect(0, 0, 1, 0);
-    manager.connect(1, 0, 2, 0);
+    manager.connect(3, 1, 0, 0);
+    manager.connect(3, 2, 0, 1);
+    manager.connect(0, 0, 2, 0);
 
     manager.printModuleInfo();
 

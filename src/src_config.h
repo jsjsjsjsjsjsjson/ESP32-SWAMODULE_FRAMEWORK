@@ -6,4 +6,6 @@
 #define MAX_MODULE 16
 #define MAX_PORT_OUTPUT_COPY 4
 
+#define SMP_RATE 44100
+
 #endif

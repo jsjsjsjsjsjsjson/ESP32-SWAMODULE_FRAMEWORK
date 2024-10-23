@@ -3,10 +3,10 @@
 
 #include "driver/i2s_std.h"
 #include "module_manager.hpp"
+#include "src_config.h"
 #include "FreeRTOS.h"
 
 const int BUFF_SIZE = 2048;
-const int SMP_RATE = 44100;
 
 class i2s_audio_out: public Module_t {
 public:
