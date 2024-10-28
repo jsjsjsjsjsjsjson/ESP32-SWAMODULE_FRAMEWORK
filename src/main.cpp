@@ -9,7 +9,44 @@
 #include "key_event.h"
 #include "simple_osc.h"
 
+#include "font5x6.h"
+
+#include <Adafruit_Keypad.h>
+
 #include "Adafruit_MPR121.h"
+
+#include "Adafruit_SSD1322.h"
+
+#define ROWS 4 // rows
+#define COLS 3 // columns
+
+typedef enum {
+    KEY_L,
+    KEY_OK,
+    KEY_MENU,
+    KEY_UP,
+    KEY_S,
+    KEY_NAVI,
+    KEY_R,
+    KEY_BACK,
+    KEY_OCTD,
+    KEY_DOWN,
+    KEY_P,
+    KEY_OCTU
+} key_define_t;
+
+const uint8_t key_map[ROWS][COLS] = {
+  {KEY_L,KEY_OK,KEY_MENU},
+  {KEY_UP,KEY_S,KEY_NAVI},
+  {KEY_R,KEY_BACK,KEY_OCTD},
+  {KEY_DOWN,KEY_P,KEY_OCTU}
+};
+const uint8_t rowPins[ROWS] = {47, 18, 45, 46};
+const uint8_t colPins[COLS] = {38, 39, 48};
+
+Adafruit_Keypad keypad = Adafruit_Keypad(makeKeymap(key_map), (uint8_t*)rowPins, (uint8_t*)colPins, ROWS, COLS);
+
+Adafruit_SSD1306 display(128, 64, &SPI, 7, 15, 6, 10000000);
 
 Adafruit_MPR121 touchPad0;
 Adafruit_MPR121 touchPad1;
@@ -146,6 +183,18 @@ void soundEng(void *arg) {
 }
 
 void setup() {
+    // esp_restart();
+    SPI.begin(17, -1, 16);
+    display.begin(SSD1306_SWITCHCAPVCC);
+    display.clearDisplay();
+    display.setTextWrap(true);
+    // display.setFont(&fontTest);
+    display.setTextColor(1);
+    display.setTextSize(1);
+    for (uint8_t i = 0; i < 128; i++) {
+        display.printf("%c", i);
+    }
+    display.display();
     xNoteQueue = xQueueCreate(8, sizeof(key_event_t));
     manager.module_manager.registerModule<SimpleOsc>();
     manager.module_manager.registerModule<VolCtrl>();
