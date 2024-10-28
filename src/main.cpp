@@ -9,7 +9,7 @@
 #include "key_event.h"
 #include "simple_osc.h"
 
-#include "font5x6.h"
+#include "font4x5.h"
 
 #include <Adafruit_Keypad.h>
 
@@ -188,13 +188,20 @@ void setup() {
     display.begin(SSD1306_SWITCHCAPVCC);
     display.clearDisplay();
     display.setTextWrap(true);
-    // display.setFont(&fontTest);
+    display.setFont(&font4x5);
     display.setTextColor(1);
     display.setTextSize(1);
-    for (uint8_t i = 0; i < 128; i++) {
+    display.setCursor(0, 0);
+    display.printf("Hello, world.");
+    display.display();
+    vTaskDelay(2048);
+    display.clearDisplay();
+    for (uint8_t i = 32; i < 127; i++) {
         display.printf("%c", i);
     }
+    display.printf("\n\nfont4x5\nlibchara-dev\n\nFONT4X5\nLIBCHARA-DEV");
     display.display();
+    vTaskDelay(1024);
     xNoteQueue = xQueueCreate(8, sizeof(key_event_t));
     manager.module_manager.registerModule<SimpleOsc>();
     manager.module_manager.registerModule<VolCtrl>();
@@ -214,6 +221,13 @@ void setup() {
 
     xTaskCreatePinnedToCore(serialDebug, "terminal", 4096, NULL, 2, NULL, 1);
     xTaskCreate(soundEng, "Sound Eng", 4096, NULL, 2, NULL);
+    display.clearDisplay();
+    display.setCursor(0, 0);
+    for (uint8_t i = 0; i < manager.getSlotSize(); i++) {
+        display.printf("%s:\n%s\n", manager.modules[i]->module_info.name, manager.modules[i]->module_info.profile);
+        printf("%s:\n%s\n", manager.modules[i]->module_info.name, manager.modules[i]->module_info.profile);
+    }
+    display.display();
 }
 
 void loop() {
