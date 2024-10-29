@@ -224,7 +224,7 @@ void setup() {
     display.clearDisplay();
     display.setCursor(0, 0);
     for (uint8_t i = 0; i < manager.getSlotSize(); i++) {
-        display.printf("%s:\n%s\n", manager.modules[i]->module_info.name, manager.modules[i]->module_info.profile);
+        display.printf("ID: %X\n%s:\n%s\n", manager.modules[i], manager.modules[i]->module_info.name, manager.modules[i]->module_info.profile);
         printf("%s:\n%s\n", manager.modules[i]->module_info.name, manager.modules[i]->module_info.profile);
     }
     display.display();

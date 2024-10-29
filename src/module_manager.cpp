@@ -115,54 +115,44 @@ Module_t* ModuleManager::createModule(const char* name) {
         return nullptr;
     }
 
-    if (activeModules.count(name) > 0) {
-        printf("Module %s is already created.\n", name);
-        return activeModules[name].get();
-    }
+    // 创建一个新的模块实例
+    ModulePtr newModule = moduleCreators[name]();
+    Module_t* modulePtr = newModule.get();
 
-    activeModules[name] = moduleCreators[name]();
-    activeModules[name]->start();
+    // 将模块实例存储在 activeModules 中
+    activeModules[modulePtr] = std::move(newModule);
+    modulePtr->start();
     activeModuleCount++;
-    return activeModules[name].get();
+
+    // 增加该模块类型的活动实例计数
+    moduleInstanceCount[name]++;
+
+    printf("Module %s created at address %p. Active instances: %d.\n", name, (void*)modulePtr, moduleInstanceCount[name]);
+    return modulePtr;
 }
 
-void ModuleManager::releaseModule(const char* name) {
-    if (activeModules.count(name) > 0) {
-        activeModules[name]->stop();  // 停止模块
-        activeModules.erase(name);    // 释放实例
+void ModuleManager::releaseModule(Module_t* modulePtr) {
+    if (activeModules.count(modulePtr) > 0) {
+        std::string moduleName = activeModules[modulePtr]->module_info.name;
+        activeModules[modulePtr]->stop();
+        activeModules.erase(modulePtr);
         activeModuleCount--;
-        printf("Module %s released.\n", name);
+
+        // 减少该模块类型的活动实例计数
+        moduleInstanceCount[moduleName]--;
+
+        printf("Module %s at address %p released. Active instances: %d.\n", moduleName.c_str(), (void*)modulePtr, moduleInstanceCount[moduleName]);
     } else {
-        printf("Module %s is not active.\n", name);
+        printf("Module at address %p is not active.\n", (void*)modulePtr);
     }
 }
 
 void ModuleManager::printAllRegisteredModules() {
-    printf("Registered Modules:\n");
+    printf("Registered Modules and Active Instances:\n");
     for (const auto& pair : moduleInfoTable) {
+        const std::string& moduleName = pair.first;
         const module_info_t& info = pair.second;
-        printf("Name: %s, Author: %s, Profile: %s, ", info.name, info.author, info.profile);
-        if (activeModules.count(info.name) > 0) {
-            printf("Status: Active\n");
-        } else {
-            printf("Status: Not Active\n");
-        }
-    }
-}
-
-void ModuleManager::printModuleInfo(const char* name) {
-    if (moduleInfoTable.count(name) > 0) {
-        const module_info_t& info = moduleInfoTable[name];
-        printf("Module Information:\n");
-        printf("Name: %s\n", info.name);
-        printf("Author: %s\n", info.author);
-        printf("Profile: %s\n", info.profile);
-        if (activeModules.count(name) > 0) {
-            printf("Status: Active\n");
-        } else {
-            printf("Status: Not Active\n");
-        }
-    } else {
-        printf("Module %s not found in the information table.\n", name);
+        printf("Name: %s, Author: %s, Profile: %s, Active Instances: %d\n", 
+               info.name, info.author, info.profile, moduleInstanceCount[moduleName]);
     }
 }

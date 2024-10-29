@@ -99,10 +99,12 @@ public:
     using ModulePtr = std::unique_ptr<Module_t>;
     using CreateModuleFunc = std::function<ModulePtr()>;
 
-    // 存储模块的基本信息和创建函数
     std::unordered_map<std::string, module_info_t> moduleInfoTable;
     std::unordered_map<std::string, CreateModuleFunc> moduleCreators;
-    std::unordered_map<std::string, ModulePtr> activeModules;
+    std::unordered_map<Module_t*, ModulePtr> activeModules;
+
+    // 用于记录每个模块类型的活动实例数量
+    std::unordered_map<std::string, int> moduleInstanceCount;
 
     int activeModuleCount = 0;
 
@@ -117,6 +119,9 @@ public:
             return std::make_unique<T>();
         };
 
+        // 初始化该模块类型的计数为0
+        moduleInstanceCount[info.name] = 0;
+
         printf("Module %s registered.\n", info.name);
     }
 
@@ -124,13 +129,13 @@ public:
     Module_t* createModule(const char* name);
 
     // 释放模块实例
-    void releaseModule(const char* name);
+    void releaseModule(Module_t* modulePtr);
 
-    // 打印所有已注册的模块信息
+    // 打印所有已注册的模块信息和实例数量
     void printAllRegisteredModules();
 
     // 打印特定模块的信息
-    void printModuleInfo(const char* name);
+    // void printModuleInfo(const char* name);
 
     ~ModuleManager();
 };

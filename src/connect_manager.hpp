@@ -44,9 +44,7 @@ public:
 
     int releaseModule(int slot) {
         if (slot >= modules.size()) {printf("Slot Error\n");return -1;}
-        char modName[32];
-        memcpy(modName, modules[slot]->module_info.name, sizeof(modules[slot]->module_info.name));
-        module_manager.releaseModule(modName);
+        module_manager.releaseModule(modules[slot]);
         // modules[slot] = nullptr;
         modules.erase(modules.begin() + slot);
         connect_status.erase(connect_status.begin() + slot);
@@ -81,7 +79,7 @@ public:
     void printModuleInfo() {
         for (uint8_t m = 0; m < getSlotSize(); m++) {
             module_info_t info = modules[m]->module_info;
-            printf("Module #%d Information:\n", m);
+            printf("Module #%d(ID: %X) Information:\n", m, modules[m]);
             printf("Name: %s\n", info.name);
             printf("Author: %s\n", info.author);
             printf("Profile: %s\n", info.profile);
