@@ -9,6 +9,8 @@
 #include "key_event.h"
 #include "simple_osc.h"
 
+#include "font3x5.h"
+
 #include "font4x5.h"
 
 #include <Adafruit_Keypad.h>
@@ -182,52 +184,37 @@ void soundEng(void *arg) {
     }
 }
 
+void GUI(void *arg) {
+    for (;;) {
+        vTaskDelay(32);
+    }
+}
+
 void setup() {
     // esp_restart();
     SPI.begin(17, -1, 16);
     display.begin(SSD1306_SWITCHCAPVCC);
     display.clearDisplay();
     display.setTextWrap(true);
-    display.setFont(&font4x5);
+    display.setFont(&font3x5);
     display.setTextColor(1);
     display.setTextSize(1);
     display.setCursor(0, 0);
-    display.printf("Hello, world.");
+    display.printf("REGISTER MODULE...\n");
     display.display();
-    vTaskDelay(2048);
-    display.clearDisplay();
-    for (uint8_t i = 32; i < 127; i++) {
-        display.printf("%c", i);
-    }
-    display.printf("\n\nfont4x5\nlibchara-dev\n\nFONT4X5\nLIBCHARA-DEV");
-    display.display();
-    vTaskDelay(1024);
     xNoteQueue = xQueueCreate(8, sizeof(key_event_t));
     manager.module_manager.registerModule<SimpleOsc>();
     manager.module_manager.registerModule<VolCtrl>();
     manager.module_manager.registerModule<i2s_audio_out>();
     manager.module_manager.registerModule<noteEventModule>();
 
-    manager.createModule("simple osc");
-    manager.createModule("volume control");
-    manager.createModule("ESP32 I2S Audio Out");
-    manager.createModule("Note Event");
-
-    manager.connect(3, 1, 0, 0);
-    manager.connect(3, 2, 0, 1);
-    manager.connect(0, 0, 2, 0);
-
+    display.printf("INIT...\n");
+    display.display();
     manager.printModuleInfo();
 
     xTaskCreatePinnedToCore(serialDebug, "terminal", 4096, NULL, 2, NULL, 1);
-    xTaskCreate(soundEng, "Sound Eng", 4096, NULL, 2, NULL);
-    display.clearDisplay();
-    display.setCursor(0, 0);
-    for (uint8_t i = 0; i < manager.getSlotSize(); i++) {
-        display.printf("ID: %X\n%s:\n%s\n", manager.modules[i], manager.modules[i]->module_info.name, manager.modules[i]->module_info.profile);
-        printf("%s:\n%s\n", manager.modules[i]->module_info.name, manager.modules[i]->module_info.profile);
-    }
-    display.display();
+    xTaskCreate(soundEng, "Sound Eng", 4096, NULL, 4, NULL);
+    xTaskCreate(GUI, "GUI", 8192, NULL, 3, NULL);
 }
 
 void loop() {
