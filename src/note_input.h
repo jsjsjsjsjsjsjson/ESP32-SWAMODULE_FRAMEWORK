@@ -3,7 +3,6 @@
 
 #include "module_manager.hpp"
 #include <freertos/queue.h>
-#include "key_event.h"
 
 const float midi2freq_float[128] = {
     8.1757989156f,
